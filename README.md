@@ -20,7 +20,7 @@ pip3 install easy_ernie
 from easy_ernie import FastErnie
 
 if __name__ == '__main__':
-    fastErnie = FastErnie('BDUSS_BFESS', 'BAIDUID')
+    fastErnie = FastErnie('BAIDUID', 'BDUSS_BFESS')
     print(fastErnie.ask('你好'))
 ```
 更多方法查看[Wiki](https://github.com/XiaoXinYo/Easy-Ernie/wiki).

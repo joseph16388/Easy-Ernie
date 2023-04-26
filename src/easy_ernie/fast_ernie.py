@@ -5,7 +5,7 @@ from typing import Generator
 from ernie import Ernie
 
 class FastErnie:
-    def __init__(self, BAIDUID, BDUSS_BFESS):
+    def __init__(self, BAIDUID: str, BDUSS_BFESS: str):
         self.ernie = Ernie(BAIDUID, BDUSS_BFESS)
         self.sessionId = ''
         self.parentChatId = 0
