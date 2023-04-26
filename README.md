@@ -1,3 +1,5 @@
+![Release](https://img.shields.io/badge/Release-0.1.2-blue)
+---
 ## 介绍
 简洁的调用文心一言的WebAPI
 ## 需求
