@@ -40,17 +40,17 @@ class Ernie:
     
     def checkRequest(self) -> None:
         if self.request.status_code != 200:
-            raise Exception(f'请求失败,请检查网络')
+            raise Exception('请求失败,请检查网络')
         
         try:
             self.request.json()
         except:
-            raise Exception(f'请求失败,响应格式错误')
+            raise Exception('请求失败,响应格式错误')
         
         if self.request.json().get('msg') == '请先登录':
-            raise Exception(f'请求失败,请先登录')
+            raise Exception('请求失败,请先登录')
         elif self.request.json().get('msg') == '用户访问被限制':
-            raise Exception(f'请求失败,用户访问被限制')
+            raise Exception('请求失败,用户访问被限制')
 
     def get(self, url: str) -> requests:
         self.request = requests.get(url, headers=self.header)
@@ -151,6 +151,7 @@ class Ernie:
         botParentChatId = data.get('data').get('botChat').get('parent')
 
         fullAnswer = ''
+        pattern = r'<img[^>]*\ssrc=[\'"]([^\'"]+)[\'"][^>]*\s/>'
         urls = []
         sentenceId = 0
         while True:
@@ -172,30 +173,34 @@ class Ernie:
             data = data.get('data')
             sentenceId = data.get('sent_id')
             content = data.get('content')
-
+            
             if content.strip():
-                pattern = r'<img[^>]*\ssrc=[\'"]([^\'"]+)[\'"][^>]*\s/>'
-                urls.extend(re.findall(pattern, content))
+                fullAnswer += content
                 content = re.sub(pattern, '', content)
                 content = content.replace('<br>', '\n')
                 content = content.strip()
-                fullAnswer += content
 
                 yield {
                     'answer': content,
                     'urls': urls,
                     'sessionId': sessionId,
-                    'chatId': botChatId,
+                    'botChatId': botChatId,
                     'done': False
                 }
 
             if data.get('stop') == 1 or data.get('is_end') == 1:
                 break
+        
+        urls.extend(re.findall(pattern, fullAnswer))
+        fullAnswer = re.sub(pattern, '', fullAnswer)
+        fullAnswer = fullAnswer.replace('<br>', '\n')
+        fullAnswer = fullAnswer.strip()
+        
         yield {
             'answer': fullAnswer,
             'urls': urls,
             'sessionId': sessionId,
-            'chatId': botChatId,
+            'botChatId': botChatId,
             'done': True
         }
 

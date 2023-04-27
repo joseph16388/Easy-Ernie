@@ -1,4 +1,4 @@
-![Release](https://img.shields.io/badge/Release-0.1.2-blue)
+![Release](https://img.shields.io/badge/Release-0.1.3-blue)
 ---
 ## 介绍
 简洁的调用文心一言的WebAPI
@@ -27,6 +27,6 @@ if __name__ == '__main__':
 ```
 更多方法查看[Wiki](https://github.com/XiaoXinYo/Easy-Ernie/wiki).
 ## Acs-Token
-由于文心一言的Acs-Token的时间戳参数不定时的变化,所以包里调用了API.感兴趣的可以联系我.
+由于文心一言的Acs-Token算法中的参数不定时的变化,所以包里调用了API.感兴趣的可以联系我.
 ## 感谢
 灵感来源自[acheong08](https://github.com/acheong08),[ls233](https://github.com/lss233).

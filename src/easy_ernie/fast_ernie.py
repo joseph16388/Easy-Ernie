@@ -2,7 +2,7 @@
 # Author: XiaoXinYo
 
 from typing import Generator
-from ernie import Ernie
+from .ernie import Ernie
 
 class FastErnie:
     def __init__(self, BAIDUID: str, BDUSS_BFESS: str):
@@ -14,15 +14,15 @@ class FastErnie:
         if not self.sessionId:
             self.sessionId = self.ernie.newConversation(question)
         for item in self.ernie.askStream(question, self.sessionId, self.parentChatId):
-            self.parentChatId = item.get('chatId')
+            self.parentChatId = item.get('botChatId')
             yield item
-
+    
     def ask(self, question: str) -> dict:
-        if not self.sessionId:
-            self.sessionId = self.ernie.newConversation(question)
-        data = self.ernie.ask(question, self.sessionId, self.parentChatId)
-        self.parentChatId = data.get('chatId')
-        return data
+        result = {}
+        for item in self.askStream(question):
+            result = item
+        del result['done']
+        return result
     
     def close(self) -> bool:
         if self.ernie.deleteConversation(self.sessionId):

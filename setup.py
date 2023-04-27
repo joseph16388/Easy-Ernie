@@ -1,11 +1,11 @@
 from setuptools import setup, find_packages
 
-with open('README.md', 'r', encoding='utf-8') as file:
+with open('./README.md', 'r', encoding='utf-8') as file:
     long_description = file.read()
 
 setup(
     name='easy-ernie',
-    version='0.1.2',
+    version='0.1.3',
     description='简洁的调用文心一言的WebAPI',
     long_description=long_description,
     long_description_content_type="text/markdown",
