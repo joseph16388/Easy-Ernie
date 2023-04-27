@@ -7,7 +7,7 @@
 2. 包: requests.
 3. 其他: 文心一言账户.
 ## 安装
-pip3 install easy-ernie
+pip3 install easy-ernie --upgrade
 ## Cookie
 ![图片1](https://s1.ax1x.com/2023/04/26/p9KDUYR.md.png)
 1. 访问[文心一言](https://yiyan.baidu.com).
