@@ -1,4 +1,4 @@
-![Release](https://img.shields.io/badge/Release-0.1.3-blue)
+![Release](https://img.shields.io/badge/Release-0.1.4-blue)
 ---
 ## 介绍
 简洁的调用文心一言的WebAPI
@@ -18,12 +18,24 @@ pip3 install easy-ernie --upgrade
 6. 复制下方Cookie Value的值.
 7. BDUSS_BFESS同理.
 ## 使用
+### Ernie
+```python
+from easy_ernie import Ernie
+
+if __name__ == '__main__':
+    ernie = Ernie('BAIDUID', 'BDUSS_BFESS')
+    sessionId = ernie.newConversation('测试')
+    print(ernie.ask(question, '你好', '0'))
+    ernie.deleteConversation(sessionId)
+```
+### FastErinie
 ```python
 from easy_ernie import FastErnie
 
 if __name__ == '__main__':
     fastErnie = FastErnie('BAIDUID', 'BDUSS_BFESS')
     print(fastErnie.ask('你好'))
+    fastErnie.close()
 ```
 更多方法查看[Wiki](https://github.com/XiaoXinYo/Easy-Ernie/wiki).
 ## Acs-Token
