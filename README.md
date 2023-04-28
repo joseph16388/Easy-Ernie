@@ -1,4 +1,4 @@
-![Release](https://img.shields.io/badge/Release-0.1.4-blue)
+![Release](https://img.shields.io/badge/Release-0.1.3-blue)
 ---
 ## 介绍
 简洁的调用文心一言的WebAPI

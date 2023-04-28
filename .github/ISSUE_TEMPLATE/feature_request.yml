@@ -7,7 +7,7 @@ body:
     attributes:
       label: 在提交前请确保以下这些
       options:
-        - label: 在Issue无法找到此它
+        - label: 在Issue无法找到它
           required: true
   - type: textarea
     id: description
