@@ -12,8 +12,8 @@ def getTimestamp():
 class Ernie:
     def __init__(self, BAIDUID: str, BDUSS_BFESS: str):
         self.BAIDUID = BAIDUID
-        self.BDUSS_BFESS = BDUSS_BFESS
-        self.header = {
+        self.session = requests.Session()
+        self.session.headers = {
             'Host': 'yiyan.baidu.com',
             'Connection': 'keep-alive',
             'Content-Length': '0',
@@ -31,12 +31,12 @@ class Ernie:
             'Referer': 'https://yiyan.baidu.com/',
             'Accept-Encoding': 'gzip, deflate, br',
             'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
-            'Cookie': f'BDUSS_BFESS={self.BDUSS_BFESS};'
+            'Cookie': f'BDUSS_BFESS={BDUSS_BFESS};'
         }
     
     def getSign(self) -> str:
         data = requests.get(f'https://api.hack-er.cn/ernie/acs_token?BAIDUID={self.BAIDUID}',).json()
-        return data.get('data')
+        return data['data']
     
     def checkRequest(self) -> None:
         if self.request.status_code != 200:
@@ -47,20 +47,20 @@ class Ernie:
         except:
             raise Exception('请求失败,响应格式错误')
         
-        if self.request.json().get('msg') == '请先登录':
-            raise Exception('请求失败,请先登录')
-        elif self.request.json().get('msg') == '用户访问被限制':
-            raise Exception('请求失败,用户访问被限制')
+        if self.request.json()['code'] != 0:
+            raise Exception(f'请求失败,{self.request.json()["msg"]}')
 
-    def get(self, url: str) -> requests:
-        self.request = requests.get(url, headers=self.header)
-        self.checkRequest()
+    def get(self, url: str, check=True) -> requests:
+        self.request = self.session.get(url)
+        if check:
+            self.checkRequest()
         return self.request
     
-    def post(self, url: str, data: dict) -> requests:
-        self.header['Content-Length'] = str(len(data))
-        self.request = requests.post(url, headers=self.header, json=data)
-        self.checkRequest()
+    def post(self, url: str, data: dict, check=True) -> requests:
+        self.session.headers['Content-Length'] = str(len(data))
+        self.request = self.session.post(url, json=data)
+        if check:
+            self.checkRequest()
         return self.request
     
     def getConversation(self) -> Union[None, list]:
@@ -72,7 +72,7 @@ class Ernie:
                 'timestamp': getTimestamp()
             }
         ).json()
-        return data.get('data').get('sessions')
+        return data['data']['sessions']
 
     def newConversation(self, name: str) -> str:
         data = self.post(
@@ -83,7 +83,7 @@ class Ernie:
                 'deviceType': 'pc'
             }
         ).json()
-        return data.get('data').get('sessionId')
+        return data['data']['sessionId']
     
     def deleteConversation(self, sessionId: str) -> bool:
         data = self.post(
@@ -92,9 +92,10 @@ class Ernie:
                 'sessionId': sessionId,
                 'timestamp': getTimestamp(),
                 'deviceType': 'pc'
-            }
+            },
+            False
         ).json()
-        return True if data.get('code') == 0 else False
+        return True if data['code'] == 0 else False
 
     def renameConversation(self, sessionId: str, name: str) -> bool:
         self.post(
@@ -118,7 +119,7 @@ class Ernie:
                 'deviceType': 'pc'
             }
         ).json()
-        return data.get('data').get('currentChatId')
+        return data['data']['currentChatId']
 
     def askStream(self, question: str, sessionId: str, parentChatId: str) -> Generator:
         self.post(
@@ -131,7 +132,7 @@ class Ernie:
         )
 
         sign = self.getSign()
-        self.header['Acs-Token'] = sign
+        self.session.headers['Acs-Token'] = sign
         data = self.post(
             'https://yiyan.baidu.com/eb/chat/new',
             {
@@ -147,8 +148,8 @@ class Ernie:
                 'sign': sign
             }
         ).json()
-        botChatId = data.get('data').get('botChat').get('id')
-        botParentChatId = data.get('data').get('botChat').get('parent')
+        botChatId = data['data']['botChat']['id']
+        botParentChatId = data['data']['botChat']['parent']
 
         fullAnswer = ''
         pattern = r'<img[^>]*\ssrc=[\'"]([^\'"]+)[\'"][^>]*\s/>'
@@ -156,7 +157,7 @@ class Ernie:
         sentenceId = 0
         while True:
             sign = self.getSign()
-            self.header['Acs-Token'] = sign
+            self.session.headers['Acs-Token'] = sign
             data = self.post(
                 'https://yiyan.baidu.com/eb/chat/query',
                 {
@@ -170,9 +171,9 @@ class Ernie:
                     'sign': sign
                 }
             ).json()
-            data = data.get('data')
-            sentenceId = data.get('sent_id')
-            content = data.get('content')
+            data = data['data']
+            sentenceId = data['sent_id']
+            content = data['content']
             
             if content.strip():
                 fullAnswer += content
@@ -188,7 +189,7 @@ class Ernie:
                     'done': False
                 }
 
-            if data.get('stop') == 1 or data.get('is_end') == 1:
+            if data['stop'] == 1 or data['is_end'] == 1:
                 break
         
         urls.extend(re.findall(pattern, fullAnswer))
@@ -206,7 +207,7 @@ class Ernie:
 
     def ask(self, question: str, sessionId: str='', parentChatId: str='') -> dict:
         result = {}
-        for item in self.askStream(question, sessionId, parentChatId):
-            result = item
+        for data in self.askStream(question, sessionId, parentChatId):
+            result = data
         del result['done']
         return result
