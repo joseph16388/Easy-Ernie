@@ -1,5 +1,8 @@
 ![Release](https://img.shields.io/badge/Release-0.1.4-blue)
 ---
+## 提示
+有封号风险
+---
 ## 介绍
 简洁的调用文心一言的WebAPI
 ## 需求
