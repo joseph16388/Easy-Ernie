@@ -1,5 +1,5 @@
 ## 提示
-1. 目前已知文心一言有封号风险.
+有封号风险.
 ---
 ![Release](https://img.shields.io/badge/Release-0.1.4-blue)
 ---
