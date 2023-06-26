@@ -80,7 +80,8 @@ class Ernie:
             {
                 'sessionName': name,
                 'timestamp': getTimestamp(),
-                'deviceType': 'pc'
+                'deviceType': 'pc',
+                'plugins': []
             }
         ).json()
         return data['data']['sessionId']
@@ -123,7 +124,7 @@ class Ernie:
 
     def askStream(self, question: str, sessionId: str, parentChatId: str) -> Generator:
         self.post(
-            'https://yiyan.baidu.com/eb/chat/check',
+            'https://yiyan.baidu.com/eb/chat/checkAndBan',
             {
                 'text': question,
                 'timestamp': getTimestamp(),
@@ -145,7 +146,9 @@ class Ernie:
                 'code': 0,
                 'msg': '',
                 'jt': '',
-                'sign': sign
+                'sign': sign,
+                'pluginInfo': [],
+                'plugins': []
             }
         ).json()
         botChatId = data['data']['botChat']['id']
