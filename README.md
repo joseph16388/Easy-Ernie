@@ -1,7 +1,9 @@
 ## 提示
-有封号风险.
+1. 有封号风险.
+2. 由于文心一言的Acs-Token算法的参数不定时的变化,所以包里调用了API.感兴趣的或有自动更新方法的可以联系我.
+3. 若出现了`用户访问被限制`请到[Isuue](https://github.com/XiaoXinYo/Easy-Ernie/issues/6)回复,我会及时更新Acs-Token算法的参数.
 ---
-![Release](https://img.shields.io/badge/Release-0.1.4-blue)
+![Release](https://img.shields.io/badge/Release-0.1.5-blue)
 ---
 ## 介绍
 简洁的调用文心一言的WebAPI
@@ -28,7 +30,7 @@ from easy_ernie import Ernie
 if __name__ == '__main__':
     ernie = Ernie('BAIDUID', 'BDUSS_BFESS')
     sessionId = ernie.newConversation('测试')
-    print(ernie.ask(question, '你好', '0'))
+    print(ernie.ask('你好', sessionId, '0'))
     ernie.deleteConversation(sessionId)
 ```
 ### FastErinie
@@ -41,7 +43,5 @@ if __name__ == '__main__':
     fastErnie.close()
 ```
 更多方法查看[Wiki](https://github.com/XiaoXinYo/Easy-Ernie/wiki).
-## Acs-Token
-由于文心一言的Acs-Token算法中的参数不定时的变化,所以包里调用了API.感兴趣的可以联系我.
 ## 感谢
 灵感来源自[acheong08](https://github.com/acheong08),[ls233](https://github.com/lss233).
