@@ -5,10 +5,10 @@ with open('./README.md', 'r', encoding='utf-8') as file:
 
 setup(
     name='easy-ernie',
-    version='0.1.5',
+    version='0.1.6',
     description='简洁的调用文心一言的WebAPI',
     long_description=long_description,
-    long_description_content_type="text/markdown",
+    long_description_content_type='text/markdown',
     author='XiaoXinYo',
     url='https://github.com/XiaoXinYo/Easy-Ernie',
     packages=find_packages('./src'),
