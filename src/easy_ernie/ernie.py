@@ -14,41 +14,41 @@ class Ernie:
         self.BAIDUID = BAIDUID
         self.session = requests.Session()
         self.session.headers = {
-            'Host': 'yiyan.baidu.com',
-            'Connection': 'keep-alive',
-            'Content-Length': '0',
-            'sec-ch-ua': '"Chromium";v="112", "Microsoft Edge";v="112", "Not:A-Brand";v="99"',
-            'Content-Type': 'application/json',
-            'Acs-Token': '',
-            'sec-ch-ua-mobile': '?0',
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.58',
-            'sec-ch-ua-platform': '"macOS"',
             'Accept': '*/*',
-            'Origin': 'https://yiyan.baidu.com',
-            'Sec-Fetch-Site': 'same-site',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Dest': 'empty',
-            'Referer': 'https://yiyan.baidu.com/',
             'Accept-Encoding': 'gzip, deflate, br',
             'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
-            'Cookie': f'BDUSS_BFESS={BDUSS_BFESS};'
+            'Acs-Token': '',
+            'Connection': 'keep-alive',
+            'Content-Length': '0',
+            'Content-Type': 'application/json',
+            'Cookie': f'BDUSS_BFESS={BDUSS_BFESS};',
+            'Host': 'yiyan.baidu.com',
+            'Origin': 'https://yiyan.baidu.com',
+            'Referer': 'https://yiyan.baidu.com/',
+            'Sec-Ch-Ua': '"Not.A/Brand";v="8", "Chromium";v="114", "Microsoft Edge";v="114"',
+            'Sec-Ch-Ua-Mobile': '?0',
+            'Sec-Ch-Ua-Platform': '"Windows"',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-site',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.67'
         }
     
-    def getSign(self) -> str:
+    def getAcsToken(self) -> str:
         data = requests.get(f'https://api.hack-er.cn/ernie/acs_token?BAIDUID={self.BAIDUID}',).json()
         return data['data']
     
     def checkRequest(self) -> None:
         if self.request.status_code != 200:
-            raise Exception('请求失败,请检查网络')
+            raise Exception('请求失败,检查网络')
         
         try:
-            self.request.json()
+            data = self.request.json()
         except:
             raise Exception('请求失败,响应格式错误')
         
-        if self.request.json()['code'] != 0:
-            raise Exception(f'请求失败,{self.request.json()["msg"]}')
+        if data['code'] != 0:
+            raise Exception(f'请求失败,{data["msg"]}')
 
     def get(self, url: str, check=True) -> requests:
         self.request = self.session.get(url)
@@ -67,8 +67,8 @@ class Ernie:
         data = self.post(
             f'https://yiyan.baidu.com/eb/session/list',
             {
-                'pageSize': 1000,
                 'deviceType': 'pc',
+                'pageSize': 1000,
                 'timestamp': getTimestamp()
             }
         ).json()
@@ -78,10 +78,10 @@ class Ernie:
         data = self.post(
             'https://yiyan.baidu.com/eb/session/new',
             {
-                'sessionName': name,
-                'timestamp': getTimestamp(),
                 'deviceType': 'pc',
-                'plugins': []
+                'plugins': [],
+                'sessionName': name,
+                'timestamp': getTimestamp()
             }
         ).json()
         return data['data']['sessionId']
@@ -90,11 +90,11 @@ class Ernie:
         data = self.post(
             'https://yiyan.baidu.com/eb/session/delete',
             {
+                'deviceType': 'pc',
                 'sessionId': sessionId,
-                'timestamp': getTimestamp(),
-                'deviceType': 'pc'
+                'timestamp': getTimestamp()
             },
-            False
+            check=False
         ).json()
         return True if data['code'] == 0 else False
 
@@ -102,108 +102,116 @@ class Ernie:
         self.post(
             'https://yiyan.baidu.com/eb/session/new',
             {
+                'deviceType': 'pc',
                 'sessionId': sessionId,
                 'sessionName': name,
-                'timestamp': getTimestamp(),
-                'deviceType': 'pc'
+                'timestamp': getTimestamp()
             }
         )
         return True
     
-    def getParentChatId(self, sessionId: str) -> Union[None, str]:
+    def getConversationHistory(self, sessionId: str) -> Union[None, dict]:
         data = self.post(
             'https://yiyan.baidu.com/eb/chat/history',
             {
-                'sessionId': sessionId,
+                'deviceType': 'pc',
                 'pageSize': 2000,
+                'sessionId': sessionId,
                 'timestamp': getTimestamp(),
-                'deviceType': 'pc'
             }
         ).json()
-        return data['data']['currentChatId']
+        chats = data['data']['chats']
+        if not chats:
+            return None
+        histories = []
+        for chat in chats.values():
+            histories.append({
+                'id': chat['id'],
+                'role': chat['role'],
+                'text': chat['message'][0]['content']
+            })
+        return {
+            'histories': histories,
+            'currentChatId': str(data['data']['currentChatId'])
+        }
 
     def askStream(self, question: str, sessionId: str, parentChatId: str) -> Generator:
         self.post(
             'https://yiyan.baidu.com/eb/chat/checkAndBan',
             {
+                'deviceType': 'pc',
                 'text': question,
                 'timestamp': getTimestamp(),
-                'deviceType': 'pc'
             }
         )
 
-        sign = self.getSign()
-        self.session.headers['Acs-Token'] = sign
+        acsToken = self.getAcsToken()
+        self.session.headers['Acs-Token'] = acsToken
         data = self.post(
             'https://yiyan.baidu.com/eb/chat/new',
             {
-                'sessionId': sessionId,
-                'text': question,
-                'parentChatId': parentChatId,
-                'type': 10,
-                'timestamp': getTimestamp(),
-                'deviceType': 'pc',
                 'code': 0,
-                'msg': '',
+                'deviceType': 'pc',
                 'jt': '',
-                'sign': sign,
+                'msg': '',
+                'parentChatId': parentChatId,
                 'pluginInfo': [],
-                'plugins': []
+                'plugins': [],
+                'sessionId': sessionId,
+                'sign': acsToken,
+                'text': question,
+                'timestamp': getTimestamp(),
+                'type': 10
             }
         ).json()
         botChatId = data['data']['botChat']['id']
         botParentChatId = data['data']['botChat']['parent']
 
-        fullAnswer = ''
-        pattern = r'<img[^>]*\ssrc=[\'"]([^\'"]+)[\'"][^>]*\s/>'
-        urls = []
+        imagePattern = r'<img[^>]*\ssrc=[\'"]([^\'"]+)[\'"][^>]*\s/>'
         sentenceId = 0
+        stop = 0
         while True:
-            sign = self.getSign()
-            self.session.headers['Acs-Token'] = sign
+            acsToken = self.getAcsToken()
+            self.session.headers['Acs-Token'] = acsToken
             data = self.post(
                 'https://yiyan.baidu.com/eb/chat/query',
                 {
                     'chatId': botChatId,
+                    'deviceType': 'pc',
                     'parentChatId': botParentChatId,
                     'sentenceId': sentenceId,
-                    'sessionId': '',
-                    'stop': 0,
+                    'sessionId': sessionId,
+                    'sign': acsToken,
+                    'stop': stop,
                     'timestamp': getTimestamp(),
-                    'deviceType': 'pc',
-                    'sign': sign
                 }
             ).json()
+
             data = data['data']
             sentenceId = data['sent_id']
-            content = data['content']
-            
-            if content.strip():
-                fullAnswer += content
-                content = re.sub(pattern, '', content)
-                content = content.replace('<br>', '\n')
-                content = content.strip()
-
+            stop = data['stop']
+            answer = data['content']
+            if answer.strip():
+                answer = re.sub(imagePattern, '', answer)
+                answer = answer.replace('<br>', '\n')
+                answer = answer.strip()
                 yield {
-                    'answer': content,
-                    'urls': urls,
-                    'sessionId': sessionId,
+                    'answer': answer,
+                    'urls': re.findall(imagePattern, data['content']),
                     'botChatId': botChatId,
                     'done': False
                 }
 
-            if data['stop'] == 1 or data['is_end'] == 1:
+            if data['is_end'] == 1:
                 break
-        
-        urls.extend(re.findall(pattern, fullAnswer))
-        fullAnswer = re.sub(pattern, '', fullAnswer)
+
+        fullAnswer = data['tokens_all']
+        fullAnswer = re.sub(imagePattern, '', fullAnswer)
         fullAnswer = fullAnswer.replace('<br>', '\n')
         fullAnswer = fullAnswer.strip()
-        
         yield {
             'answer': fullAnswer,
-            'urls': urls,
-            'sessionId': sessionId,
+            'urls': re.findall(imagePattern, fullAnswer),
             'botChatId': botChatId,
             'done': True
         }
