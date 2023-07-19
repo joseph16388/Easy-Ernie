@@ -1,6 +1,6 @@
 name: BUG提交
 description: BUG提交
-title: [Bug]:
+title: '[Bug]:'
 body:
   - type: checkboxes
     id: confirm
