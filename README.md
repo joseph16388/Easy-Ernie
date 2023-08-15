@@ -3,7 +3,7 @@
 2. 由于文心一言的Acs-Token算法的参数不定时的变化,所以包里调用了API.感兴趣的或有自动更新方法的可以联系我.
 3. 若出现了`用户访问被限制`请到[Isuue](https://github.com/XiaoXinYo/Easy-Ernie/issues/6)回复,我会及时更新Acs-Token算法的参数.
 ---
-![Release](https://img.shields.io/badge/Release-0.1.6-blue)
+![Release](https://img.shields.io/badge/Release-0.1.7-blue)
 ---
 ## 介绍
 简洁的调用文心一言的WebAPI
@@ -12,7 +12,7 @@
 2. 包: requests.
 3. 其他: 文心一言账户.
 ## 安装
-pip3 install easy-ernie --upgrade
+`pip3 install easy-ernie --upgrade`
 ## Cookie
 ![图片1](https://s1.ax1x.com/2023/04/26/p9KDUYR.md.png)
 1. 访问[文心一言](https://yiyan.baidu.com).
@@ -29,8 +29,13 @@ from easy_ernie import Ernie
 
 if __name__ == '__main__':
     ernie = Ernie('BAIDUID', 'BDUSS_BFESS')
-    sessionId = ernie.newConversation('测试')
-    print(ernie.ask('你好', sessionId, '0'))
+    sessionName = '你好'
+    result1 = ernie.ask('你好', sessionName=sessionName)
+    sessionId = result1['sessionId']
+    chatBotId = result1['chatBotId']
+    print(result1)
+    result2 = ernie.ask('我给你发的上一个消息是什么', sessionId=sessionId, sessionName=sessionName, parentChatId=chatBotId)
+    print(result2)
     ernie.deleteConversation(sessionId)
 ```
 ### FastErinie
@@ -40,6 +45,7 @@ from easy_ernie import FastErnie
 if __name__ == '__main__':
     fastErnie = FastErnie('BAIDUID', 'BDUSS_BFESS')
     print(fastErnie.ask('你好'))
+    print(fastErnie.ask('我给你发的上一个消息是什么'))
     fastErnie.close()
 ```
 更多方法查看[Wiki](https://github.com/XiaoXinYo/Easy-Ernie/wiki).
