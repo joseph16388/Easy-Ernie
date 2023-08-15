@@ -1,5 +1,5 @@
-name: BUG提交
-description: BUG提交
+name: Bug提交
+description: Bug提交
 title: '[Bug]:'
 body:
   - type: checkboxes
@@ -42,7 +42,7 @@ body:
     id: trigger
     attributes:
       label: 触发
-      description: 如何触发这个问题的,提供相关代码.
+      description: 如何触发这个问题(例如提供代码).
     validations:
       required: true
   - type: textarea
