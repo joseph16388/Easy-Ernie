@@ -16,7 +16,6 @@ class Ernie:
             'Accept-Encoding': 'gzip, deflate, br',
             'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
             'Connection': 'keep-alive',
-            'Content-Length': '0',
             'Content-Type': 'application/json',
             'Cookie': f'BDUSS_BFESS={BDUSS_BFESS};',
             'Host': 'yiyan.baidu.com',
@@ -50,15 +49,35 @@ class Ernie:
 
         self.checkJson(self.response.text)
 
-    def post(self, url: str, data: dict, stream=False, check=True) -> requests.Response:
-        self.session.headers['Content-Length'] = str(len(data))
-        self.response = self.session.post(url, json=data, stream=stream)
+    def request(self, method: str, url: str, data: Optional[dict]=None, stream=False, check=True) -> requests.Response:
+        if method == 'get':
+            self.response = self.session.get(url, params=data, stream=stream)
+        else:
+            self.session.headers['Content-Length'] = str(len(data))
+            self.response = self.session.request(method, url, data=json.dumps(data), stream=stream)
+
         if not stream and check:
             self.checkResponse()
         return self.response
+
+    def get(self, url: str, data: Optional[dict]=None, stream=False, check=True) -> requests.Response:
+        return self.request('get', url, data, stream=stream, check=check)
+
+    def post(self, url: str, data: dict, stream=False, check=True) -> requests.Response:
+        return self.request('post', url, data, stream=stream, check=check)
+
+    def delete(self, url: str, data: dict, stream=False, check=True) -> requests.Response:
+        return self.request('delete', url, data, stream=stream, check=check)
     
-    def getConversation(self) -> Optional[list]:
-        data = self.post(
+    def getConversation(self) -> dict:
+        topData = self.post(
+            'https://yiyan.baidu.com/eb/session/top/list',
+            {
+                'deviceType': 'pc',
+                'timestamp': getTimestamp()
+            }
+        ).json()
+        normalData = self.post(
             f'https://yiyan.baidu.com/eb/session/list',
             {
                 'deviceType': 'pc',
@@ -66,7 +85,10 @@ class Ernie:
                 'timestamp': getTimestamp()
             }
         ).json()
-        return data['data']['sessions']
+        return {
+            'top': topData['data']['sessions'],
+            'normal': normalData['data']['sessions'] or []
+        }
 
     def newConversation(self, sessionName: str) -> str:
         data = self.post(
@@ -80,6 +102,18 @@ class Ernie:
         ).json()
         return data['data']['sessionId']
 
+    def renameConversation(self, sessionId: str, name: str) -> bool:
+        self.post(
+            'https://yiyan.baidu.com/eb/session/new',
+            {
+                'deviceType': 'pc',
+                'sessionId': sessionId,
+                'sessionName': name,
+                'timestamp': getTimestamp()
+            }
+        ).json()
+        return True
+
     def deleteConversation(self, sessionId: str) -> bool:
         data = self.post(
             'https://yiyan.baidu.com/eb/session/delete',
@@ -92,20 +126,45 @@ class Ernie:
         ).json()
         return True if data['code'] == 0 else False
 
-    def renameConversation(self, sessionId: str, name: str) -> bool:
-        self.post(
-            'https://yiyan.baidu.com/eb/session/new',
+    def deleteConversations(self, sessionIds: list) -> bool:
+        data = self.post(
+            'https://yiyan.baidu.com/eb/session/delete',
+            {
+                'deviceType': 'pc',
+                'sessionIds': sessionIds,
+                'timestamp': getTimestamp()
+            },
+            check=False
+        ).json()
+        return True if data['code'] == 0 else False
+
+    def topConversation(self, sessionId: str) -> bool:
+        data = self.post(
+            'https://yiyan.baidu.com/eb/session/top/move',
             {
                 'deviceType': 'pc',
                 'sessionId': sessionId,
-                'sessionName': name,
                 'timestamp': getTimestamp()
-            }
-        )
-        return True
+            },
+            check=False
+        ).json()
+        return True if data['code'] == 0 else False
+
+    def cancelTopConversation(self, sessionId: str) -> bool:
+        data = self.post(
+            'https://yiyan.baidu.com/eb/session/top/cancel',
+            {
+                'deviceType': 'pc',
+                'sessionId': sessionId,
+                'timestamp': getTimestamp()
+            },
+            check=False
+        ).json()
+        return True if data['code'] == 0 else False
 
     def getConversationDetail(self, sessionId: str) -> Optional[dict]:
         conversations = self.getConversation()
+        conversations = conversations['top'] + conversations['normal']
         if not conversations:
             return None
         base = {}
@@ -130,7 +189,7 @@ class Ernie:
         chats = sorted(chats.values(), key=lambda data: data['createTime'])
         for chat in chats:
             histories.append({
-                'id': chat['id'],
+                'chatId': chat['id'],
                 'role': chat['role'],
                 'text': chat['message'][0]['content'],
                 'createTime': chat['createTime'],
@@ -141,6 +200,47 @@ class Ernie:
             'histories': histories,
             'currentChatId': str(currentChatId) if currentChatId else '0'
         }
+
+    def getShareConversation(self) -> list:
+        data = self.get('https://yiyan.baidu.com/eb/share/list').json()
+        conversations = []
+        for conversation in data['data']:
+            conversations.append({
+                'shareId': conversation['id'],
+                'sessionId': conversation['sessionId'],
+                'key': conversation['shareKey'],
+                'createTime': conversation['updateTime'],
+                'userId': conversation['userId']
+            })
+        return conversations
+
+    def deleteShareConversation(self, shareId: str) -> bool:
+        self.delete(
+            f'https://yiyan.baidu.com/eb/share/{shareId}',
+            {}
+        )
+        return True
+
+    def deleteShareConversations(self, userId: str) -> bool:
+        self.delete(
+            'https://yiyan.baidu.com/eb/share/all',
+            {
+                'userId': userId
+            }
+        )
+        return True
+
+    def shareConversation(self, sessionId: str, chatIds: list) -> str:
+        data = self.post(
+            'https://yiyan.baidu.com/eb/share/key/gen',
+            {
+                'botChatId': chatIds,
+                'deviceType': 'pc',
+                'sessionId': sessionId,
+                'timestamp': getTimestamp()
+            }
+        ).json()
+        return data['data']['key']
 
     def askStream(self, question: str, sessionId: str='', sessionName: str='', parentChatId: str='0') -> Generator:
         acsToken = self.getAcsToken()
